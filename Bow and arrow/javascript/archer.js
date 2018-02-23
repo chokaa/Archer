@@ -1,5 +1,5 @@
 var kanvas;
-var max_speed = -5;
+var max_speed = -3;
 var min_speed = 0.3;
 var poluprecnik = 20;
 var c = document.querySelector('canvas');
