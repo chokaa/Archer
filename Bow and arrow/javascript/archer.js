@@ -1,5 +1,5 @@
 var kanvas;
-var max_speed = -2;
+var max_speed = -5;
 var min_speed = 0.3;
 var poluprecnik = 20;
 var c = document.querySelector('canvas');
@@ -15,16 +15,16 @@ var strele = [];
 var visina_igraca = 200;
 var sirina_igraca = 200;
 var pozicija_igraca = 200;
-var broj_strela = 50;
-var sirina_strele = 20;
+var broj_strela = 20;
+var sirina_strele = 15;
 var duzina_strele = 150;
-
-var igrac = new Igrac(window.innerHeight/2,document.getElementById('slika_igraca'));
+var igrac;
+var broj_preostalih_balona;
 
 var init = function(){
 
 
-	for(let i=0;i<100;i++){
+	for(let i=0;i<broj_preostalih_balona;i++){
 
 
 		let x = Math.random()*(window.innerWidth*(1/3)) + window.innerWidth*(2/3);
@@ -37,9 +37,24 @@ var init = function(){
 		},i*10000*Math.random());
 	}
 }
-init();
-animate();
 
+function startApp(){
+
+
+	if($("#username").val()==""){
+		$("#username").css({ "border-color": "red", "background-color": "#FAEDEC" }).attr("placeholder", "You must enter user name");
+	}
+	else{
+		$('#myModal').modal('hide');	
+		setTimeout(()=>{
+			broj_preostalih_balona=100;
+			igrac = new Igrac(window.innerHeight/2,document.getElementById('slika_igraca'));
+			init();
+			animate();
+		},100)
+	}
+}
+//startApp();
 
 window.onresize= function(){
 	krugovi.length=0;
@@ -50,28 +65,42 @@ window.onresize= function(){
 };
 function animate(){
 
-	if(igrac.broj_strela>0)	
-	requestAnimationFrame(animate);
+	
+	if(igrac.broj_strela==0 && strele.length==0){
+		window.alert("NEMA VISE STRELE "+igrac.username.toString()+", A OBALIJA SI GI : " + igrac.broj_pogodjenih_balona.toString());
+		krugovi.length=0;
+		strele.length=0;
+		startApp();
+	}
+	else if(broj_preostalih_balona==0){
+		window.alert("NEMA VISE BALONI BRATMI, A OBALIJA SI GI : " + igrac.broj_pogodjenih_balona.toString());
+		krugovi.length=0;
+		strele.length=0;
+		startApp();
+	}
 	else
-	window.alert("NEMA VISE STRELE BRATMI");
+		requestAnimationFrame(animate);
 
 	kanvas.clearRect(0,0,innerWidth,innerHeight);
 
-	krugovi.forEach(function(element){
-		element.update();
-	})
 	strele.forEach(function(element){
 		element.update();
 	})
+	krugovi.forEach(function(element){
+		element.update();
+	})
+	
 	igrac.draw();
 
 
 	krugovi.forEach(function(element_kruga){
 		strele.forEach(function(element_strele){
-			if(element_kruga.x-element_kruga.poluprecnik<=element_strele.x+element_strele.duzina_strele && element_strele.x+element_strele.duzina_strele<=element_kruga.x+element_kruga.poluprecnik
-				&& ( element_kruga.y-element_kruga.poluprecnik <= element_strele.y+element_strele.sirina_strele &&  element_strele.y+element_strele.sirina_strele <= element_kruga.y+element_kruga.poluprecnik)){
+			if(((element_kruga.x-element_kruga.poluprecnik)<(element_strele.x+element_strele.duzina_strele)) && ((element_strele.x+element_strele.duzina_strele)<(element_kruga.x+element_kruga.poluprecnik))
+				&& ( (element_kruga.y-element_kruga.poluprecnik) < (element_strele.y+element_strele.sirina_strele)  &&  (element_kruga.y+element_kruga.poluprecnik) > (element_strele.y) )){
 				var obrisi_element = krugovi.indexOf(element_kruga);
 				krugovi.splice(obrisi_element,1);
+				broj_preostalih_balona-=1;
+				igrac.broj_pogodjenih_balona+=1;
 			}
 	})
 	})
@@ -86,10 +115,13 @@ window.addEventListener('mousemove',function(event){
 });
 
 window.addEventListener('click',function(event){
+	if(igrac.broj_strela>0){
 
-	var strela = new Strela(event.clientY,document.getElementById('slika_strele'));
-	strela.ispali_strelu();
-	strele.push(strela);
+		igrac.broj_strela-=1;
+		var strela = new Strela(event.clientY,document.getElementById('slika_strele'));
+		strela.ispali_strelu();
+		strele.push(strela);
+	}
 
 });
 
@@ -119,10 +151,12 @@ function Krug(x,y,poluprecnik,dx,dy){
 		if( this.x - this.poluprecnik >= c.width || this.x - this.poluprecnik <= 0 ){
 			var ukloni = krugovi.indexOf(this);
 			krugovi.splice(ukloni,1);
+			broj_preostalih_balona-=1;
 		}
-		if( this.y+ this.poluprecnik >= c.height || this.y - this.poluprecnik <= 0 ){
+		if( this.y- this.poluprecnik >= c.height || this.y + this.poluprecnik <= 0 ){
 			var ukloni = krugovi.indexOf(this);
 			krugovi.splice(ukloni,1);
+			broj_preostalih_balona-=1;
 		}
 
 		this.x+=this.dx;
@@ -134,6 +168,8 @@ function Krug(x,y,poluprecnik,dx,dy){
 }
 function Igrac(y,src){
 	this.broj_strela = broj_strela;
+	this.broj_pogodjenih_balona=0;
+	this.username=$("#username").val();
 	this.y=y;
 	this.x=pozicija_igraca;
 	this.sirina_igraca=sirina_igraca;
@@ -145,7 +181,23 @@ function Igrac(y,src){
 	}
 
 	this.draw = function(){
+		kanvas.font = "30px Comic Sans MS";
+		kanvas.fillStyle = "rgb(255,102,255)";
+		kanvas.textAlign = "center";
+		kanvas.fillText(this.username.toString(), this.x+sirina_igraca/2, this.y-10);
+
 		kanvas.drawImage(this.image,this.x,this.y,this.sirina_igraca,this.visina_igraca);
+
+		kanvas.font = "30px Comic Sans MS";
+		kanvas.fillStyle = "rgb(102,255,255)";
+		kanvas.textAlign = "center";
+		kanvas.fillText(igrac.broj_strela.toString(), this.x+sirina_igraca/2, this.y+this.visina_igraca);
+
+
+		kanvas.font = "30px Comic Sans MS";
+		kanvas.fillStyle = "rgba(0,255,0,0.5)";
+		kanvas.textAlign = "center";
+		kanvas.fillText(igrac.broj_pogodjenih_balona.toString(), this.x+sirina_igraca/2, 30);
 	}
 }
 
@@ -156,8 +208,9 @@ function Strela(y,src){
 	this.sirina_strele = sirina_strele;
 	this.duzina_strele = duzina_strele;
 	this.ispali_strelu = function(){
-		igrac.broj_strela-=1;
-		this.update();
+		if(igrac.broj_strela>0){
+			this.update();
+		}
 	}
 	this.draw = function(){
 		kanvas.drawImage(this.image,this.x,this.y,this.duzina_strele,this.sirina_strele);
@@ -166,7 +219,7 @@ function Strela(y,src){
 		this.x+=10;
 		if(this.x>=window.innerWidth-this.duzina_strele){
 			var obrisi_element = strele.indexOf(this);
-				strele.splice(obrisi_element,1);
+			strele.splice(obrisi_element,1);
 		}
 		this.draw();
 	}

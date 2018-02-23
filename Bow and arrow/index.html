@@ -4,8 +4,39 @@
 		<meta charset="UTF-8">
 		<title>Archer</title>
 		<link rel="stylesheet" type="text/css" href="css/style.css">
+  		<meta name="viewport" content="width=device-width, initial-scale=1">
+  		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 	</head>
 	<body>
+
+  <div class="modal" id="myModal" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-body" style="padding:40px 50px;">
+          
+            <div class="form-group">
+              <label for="usrname"><span class="glyphicon glyphicon-user"></span> Username</label>
+              <input type="text" class="form-control" id="username" placeholder="Enter username" required>
+            </div>
+              <button class="btn btn-success btn-block" onclick="startApp()"><span class="glyphicon glyphicon-off"></span>Start!</button>
+          
+        </div>
+      </div>
+      
+    </div>
+  </div> 
+ 
+<script>
+$(document).ready(function(){
+	$('#myModal').modal({backdrop: 'static', keyboard: false})
+});
+</script>
+
+
 		<img src="archer.png" id="slika_igraca" style="display: none">
 		<img src="arrow.png" id="slika_strele" style="display: none">
 		<canvas></canvas>
