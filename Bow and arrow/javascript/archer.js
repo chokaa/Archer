@@ -34,7 +34,7 @@ var init = function(){
 		window.setTimeout(()=>{
 		var krug = new Krug(x,y,poluprecnik,Math.random()*min_speed,(Math.random()*max_speed)-1);
 		krugovi.push(krug);
-		},i*10000*Math.random());
+		},i*2500*Math.random());
 	}
 }
 
