@@ -20,7 +20,7 @@ var sirina_strele = 15;
 var duzina_strele = 150;
 var igrac;
 var broj_preostalih_balona;
-
+var score;
 var init = function(){
 
 
@@ -37,24 +37,82 @@ var init = function(){
 		},i*2500*Math.random());
 	}
 }
+function httpGet(theUrl,callback){
+    //document.write(theUrl);
+    var xmlHttp = null;
+    xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("GET", theUrl, true);
+    xmlHttp.onreadystatechange = handleReadyStateChange;
+    xmlHttp.send(null);
+
+    function handleReadyStateChange() {
+      if (xmlHttp.readyState == 4) {
+        if (xmlHttp.status == 200) {
+
+        score = JSON.parse(xmlHttp.responseText);
+
+		if($("#username").val()==""){
+			$("#username").css({ "border-color": "red", "background-color": "#FAEDEC" }).attr("placeholder", "You must enter user name");
+		}
+		else{
+			$('#myModal').modal('hide');	
+			setTimeout(()=>{
+
+				//callback();   
+				broj_preostalih_balona=100;
+				igrac = new Igrac(window.innerHeight/2,document.getElementById('slika_igraca'));
+				init();
+				animate();
+			},1000)
+		}
+
+        }
+      }
+
+		callback();
+    } 
+}
+
+
+
+function initTable(){
+
+	var tabelica = "<table class='table table-striped table-bordered table-hover table-condensed'><thead><tr><th>Player</th><th>Score</th></tr></thead><tbody>";
+
+	score.sort(function(a, b){
+  	return a.Score < b.Score;
+	});
+	score.forEach(function(element){
+
+		tabelica= tabelica + "<tr>"+"<td>"+ element.UserName.toString() + "</td>"+ "<td>"+ element.Score.toString() + "</td>"+"</tr>";
+
+	});
+	tabelica += "</tbody></table>"
+	
+	document.getElementById("tabela").innerHTML = tabelica;
+}
+
+function httpPost(igrac){
+$.ajax( { url: "https://api.mlab.com/api/1/databases/archersdata/collections/users?apiKey=QAqaBafQpwLnvobFPsQCxBSfjQSzE2AI",
+		  data: 
+		  JSON.stringify( { 
+		  	"UserName" : igrac.username,
+		  	"Score" : igrac.broj_pogodjenih_balona
+		  } ),
+		  type: "POST",
+		  contentType: "application/json" } );
+
+
+}
 
 function startApp(){
 
+	httpGet("https://api.mlab.com/api/1/databases/archersdata/collections/users?apiKey=QAqaBafQpwLnvobFPsQCxBSfjQSzE2AI",initTable);
 
-	if($("#username").val()==""){
-		$("#username").css({ "border-color": "red", "background-color": "#FAEDEC" }).attr("placeholder", "You must enter user name");
-	}
-	else{
-		$('#myModal').modal('hide');	
-		setTimeout(()=>{
-			broj_preostalih_balona=100;
-			igrac = new Igrac(window.innerHeight/2,document.getElementById('slika_igraca'));
-			init();
-			animate();
-		},100)
-	}
+
+	//MORA DA CEKAS GET MAJKU TI JEBEM!
+
 }
-//startApp();
 
 window.onresize= function(){
 	krugovi.length=0;
@@ -67,12 +125,14 @@ function animate(){
 
 	
 	if(igrac.broj_strela==0 && strele.length==0){
+		httpPost(igrac);
 		window.alert("NEMA VISE STRELE "+igrac.username.toString()+", A OBALIJA SI GI : " + igrac.broj_pogodjenih_balona.toString());
 		krugovi.length=0;
 		strele.length=0;
 		startApp();
 	}
 	else if(broj_preostalih_balona==0){
+		httpPost(igrac);
 		window.alert("NEMA VISE BALONI BRATMI, A OBALIJA SI GI : " + igrac.broj_pogodjenih_balona.toString());
 		krugovi.length=0;
 		strele.length=0;
