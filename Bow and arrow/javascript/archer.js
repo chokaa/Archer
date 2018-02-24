@@ -61,18 +61,16 @@ function httpGet(theUrl,callback){
 			$('#myModal').modal('hide');	
 			setTimeout(()=>{
 
-				//callback();   
 				broj_preostalih_balona=100;
 				igrac = new Igrac(window.innerHeight/2,document.getElementById('slika_igraca'));
 				init();
 				animate();
+				callback();   
 			},1000)
 		}
 
         }
       }
-
-		callback();
     } 
 }
 
@@ -111,12 +109,7 @@ $.ajax( { url: "https://api.mlab.com/api/1/databases/archersdata/collections/use
 }
 
 function startApp(){
-
 	httpGet("https://api.mlab.com/api/1/databases/archersdata/collections/users?apiKey=QAqaBafQpwLnvobFPsQCxBSfjQSzE2AI",initTable);
-
-
-	//MORA DA CEKAS GET MAJKU TI JEBEM!
-
 }
 
 window.onresize= function(){
