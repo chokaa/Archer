@@ -82,6 +82,7 @@ function initTable(){
 	score.sort(function(a, b){
   	return a.Score < b.Score;
 	});
+	score.length=20;
 	score.forEach(function(element){
 
 		tabelica= tabelica + "<tr>"+"<td>"+ element.UserName.toString() + "</td>"+ "<td>"+ element.Score.toString() + "</td>"+"</tr>";
