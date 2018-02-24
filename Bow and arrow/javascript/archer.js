@@ -54,6 +54,9 @@ function httpGet(theUrl,callback){
 		if($("#username").val()==""){
 			$("#username").css({ "border-color": "red", "background-color": "#FAEDEC" }).attr("placeholder", "You must enter user name");
 		}
+		else if($("#username").val().length>11){
+			$("#username").css({ "border-color": "red", "background-color": "#FAEDEC" }).attr("placeholder", "You must enter user name shorter than 12 characters");
+		}
 		else{
 			$('#myModal').modal('hide');	
 			setTimeout(()=>{
@@ -77,12 +80,12 @@ function httpGet(theUrl,callback){
 
 function initTable(){
 
+	if(score !== undefined){
 	var tabelica = "<table class='table table-striped table-bordered table-hover table-condensed'><thead><tr><th>Player</th><th>Score</th></tr></thead><tbody>";
-
+	
 	score.sort(function(a, b){
-  	return a.Score < b.Score;
+  	return b.Score-a.Score;
 	});
-	score.length=20;
 	score.forEach(function(element){
 
 		tabelica= tabelica + "<tr>"+"<td>"+ element.UserName.toString() + "</td>"+ "<td>"+ element.Score.toString() + "</td>"+"</tr>";
@@ -91,6 +94,7 @@ function initTable(){
 	tabelica += "</tbody></table>"
 	
 	document.getElementById("tabela").innerHTML = tabelica;
+	}
 }
 
 function httpPost(igrac){
