@@ -9,36 +9,55 @@ c.height = window.innerHeight;
 
 kanvas = c.getContext('2d');
 
+var timeouts = [];
 var krugovi = [];
 var strele = [];
-
 var visina_igraca = 200;
 var sirina_igraca = 200;
 var pozicija_igraca = 200;
 var broj_strela = 20;
-var sirina_strele = 15;
+var sirina_strele = 30;
 var duzina_strele = 150;
 var igrac;
-var broj_preostalih_balona;
+var broj_iniciranih_balona;
 var score;
+
+var iscrtajBalone = function(broj_balona){
+
+	let brzina = max_speed-(Math.random()*2);
+	if(igrac.frenzi){
+		brzina=krugovi[0].dy;
+	}
+
+	for(let i=0;i<broj_balona;i++){
+		let x = Math.random()*(window.innerWidth*(1/3)) + window.innerWidth*(2/3)-poluprecnik;
+
+		let y = window.innerHeight+i*window.innerHeight*(Math.random()+0.01);
+
+		var krug = new Krug(x,y,poluprecnik,brzina);
+		krugovi.push(krug);
+	}
+
+}
+var inicirajBalone = function(broj_balona){
+
+	krugovi.length=0;
+	for(let i=0;i<5;i++)
+		iscrtajBalone(20);
+
+}
+
+
+
 var init = function(){
 
+	inicirajBalone(broj_iniciranih_balona);
 
-	for(let i=0;i<broj_preostalih_balona;i++){
-
-
-		let x = Math.random()*(window.innerWidth*(1/3)) + window.innerWidth*(2/3);
-
-		let y = window.innerHeight-(poluprecnik+5);
-
-		window.setTimeout(()=>{
-		var krug = new Krug(x,y,poluprecnik,Math.random()*min_speed,(Math.random()*max_speed)-1);
-		krugovi.push(krug);
-		},i*2500*Math.random());
-	}
 }
+
 function httpGet(theUrl,callback){
-    //document.write(theUrl);
+
+    ugasiPomeranjeMisem();
     var xmlHttp = null;
     xmlHttp = new XMLHttpRequest();
     xmlHttp.open("GET", theUrl, true);
@@ -54,19 +73,20 @@ function httpGet(theUrl,callback){
 		if($("#username").val()==""){
 			$("#username").css({ "border-color": "red", "background-color": "#FAEDEC" }).attr("placeholder", "You must enter user name");
 		}
-		else if($("#username").val().length>11){
-			$("#username").css({ "border-color": "red", "background-color": "#FAEDEC" }).attr("placeholder", "You must enter user name shorter than 12 characters");
+		else if($("#username").val().length>20){
+			$("#username").css({ "border-color": "red", "background-color": "#FAEDEC" }).attr("placeholder", "You must enter user name shorter than 20 characters");
 		}
 		else{
 			$('#myModal').modal('hide');	
 			setTimeout(()=>{
-
-				broj_preostalih_balona=100;
+				krugovi.length=0;
 				igrac = new Igrac(window.innerHeight/2,document.getElementById('slika_igraca'));
 				init();
 				animate();
-				callback();   
-			},1000)
+				callback();
+
+				upaliPomeranjeMisem();   
+			},500)
 		}
 
         }
@@ -110,6 +130,11 @@ $.ajax( { url: "https://api.mlab.com/api/1/databases/archersdata/collections/use
 }
 
 function startApp(){
+	igrac=undefined;
+	krugovi.length=0;
+	for (var i = 0; i < timeouts.length; i++) {
+    clearTimeout(timeouts[i]);
+	}
 	httpGet("https://api.mlab.com/api/1/databases/archersdata/collections/users?apiKey=QAqaBafQpwLnvobFPsQCxBSfjQSzE2AI",initTable);
 }
 
@@ -130,9 +155,9 @@ function animate(){
 		strele.length=0;
 		startApp();
 	}
-	else if(broj_preostalih_balona==0){
+	else if(krugovi.length==0){
 		httpPost(igrac);
-		window.alert("NEMA VISE BALONI BRATMI, A OBALIJA SI GI : " + igrac.broj_pogodjenih_balona.toString());
+		window.alert("NEMA VISE BALONI "+igrac.username.toString()+", A OBALIJA SI GI : " + igrac.broj_pogodjenih_balona.toString());
 		krugovi.length=0;
 		strele.length=0;
 		startApp();
@@ -158,24 +183,36 @@ function animate(){
 				&& ( (element_kruga.y-element_kruga.poluprecnik) < (element_strele.y+element_strele.sirina_strele)  &&  (element_kruga.y+element_kruga.poluprecnik) > (element_strele.y) )){
 				var obrisi_element = krugovi.indexOf(element_kruga);
 				krugovi.splice(obrisi_element,1);
-				broj_preostalih_balona-=1;
 				igrac.broj_pogodjenih_balona+=1;
+				if(element_kruga.frenzi){
+					igrac.frenziFunction(10);
+				}
+				if(element_kruga.freez){
+					igrac.freezFunction();
+				}
 			}
 	})
 	})
 
 
 }
-
-window.addEventListener('mousemove',function(event){
-
+var reakcijaMisa = function(event){
 	igrac.move(event.clientY-igrac.sirina_igraca/2);
+}
 
-});
+
+var ugasiPomeranjeMisem = function(){
+	window.removeEventListener('mousemove',reakcijaMisa);
+}
+
+var upaliPomeranjeMisem = function (){
+	window.addEventListener('mousemove',reakcijaMisa);
+}
+
 
 window.addEventListener('click',function(event){
-	if(igrac.broj_strela>0){
 
+	if(igrac.broj_strela>0){
 		igrac.broj_strela-=1;
 		var strela = new Strela(event.clientY,document.getElementById('slika_strele'));
 		strela.ispali_strelu();
@@ -186,46 +223,52 @@ window.addEventListener('click',function(event){
 
 
 
-function Krug(x,y,poluprecnik,dx,dy){
+function Krug(x,y,poluprecnik,dy){
+	this.frenzi = Math.random()*100<2?1:0;
+	if(this.frenzi==0)
+		this.freez = Math.random()*100<2?1:0;
+
 	this.x=x;
 	this.y=y;
-	this.dx=dx;
 	this.dy=dy;
 	this.poluprecnik = poluprecnik;
-	this.min_radius = poluprecnik;
 	this.red = Math.floor(Math.random()*256);
 	this.green = Math.floor(Math.random()*256);
 	this.blue = Math.floor(Math.random()*256);
 	this.draw = function(){
-
+		
 		kanvas.beginPath();
 		kanvas.arc(this.x,this.y,this.poluprecnik,0,Math.PI*2,false);
 		kanvas.strokeStyle = 'rgb('+this.red.toString()+','+this.green.toString()+','+this.blue.toString()+')';
 		kanvas.fillStyle = 'rgb('+this.red.toString()+','+this.green.toString()+','+this.blue.toString()+')';
 		kanvas.fill();
 		kanvas.stroke();
+		if(this.frenzi){
+			kanvas.font = "10px Comic Sans MS";
+			kanvas.fillStyle = "rgb(0,0,0)";
+			kanvas.textAlign = "center";
+			kanvas.fillText("FRENZY", this.x, this.y);
+		}
+		if(this.freez){
+			kanvas.font = "10px Comic Sans MS";
+			kanvas.fillStyle = "rgb(0,0,0)";
+			kanvas.textAlign = "center";
+			kanvas.fillText("FREEZ", this.x, this.y);
+		}
 	}
 	this.update = function(){
-
-		if( this.x - this.poluprecnik >= c.width || this.x - this.poluprecnik <= 0 ){
+		if(this.y + this.poluprecnik <= 0 ){
 			var ukloni = krugovi.indexOf(this);
 			krugovi.splice(ukloni,1);
-			broj_preostalih_balona-=1;
-		}
-		if( this.y- this.poluprecnik >= c.height || this.y + this.poluprecnik <= 0 ){
-			var ukloni = krugovi.indexOf(this);
-			krugovi.splice(ukloni,1);
-			broj_preostalih_balona-=1;
 		}
 
-		this.x+=this.dx;
 		this.y+=this.dy;
-
 		this.draw();
 
 	}
 }
 function Igrac(y,src){
+	this.frenzi=0;
 	this.broj_strela = broj_strela;
 	this.broj_pogodjenih_balona=0;
 	this.username=$("#username").val();
@@ -243,20 +286,48 @@ function Igrac(y,src){
 		kanvas.font = "30px Comic Sans MS";
 		kanvas.fillStyle = "rgb(255,102,255)";
 		kanvas.textAlign = "center";
-		kanvas.fillText(this.username.toString(), this.x+sirina_igraca/2, this.y-10);
+		kanvas.fillText(this.username.toString(), this.x+sirina_igraca/2, this.y);
 
 		kanvas.drawImage(this.image,this.x,this.y,this.sirina_igraca,this.visina_igraca);
 
 		kanvas.font = "30px Comic Sans MS";
 		kanvas.fillStyle = "rgb(102,255,255)";
 		kanvas.textAlign = "center";
-		kanvas.fillText(igrac.broj_strela.toString(), this.x+sirina_igraca/2, this.y+this.visina_igraca);
+		kanvas.fillText("Strele : "+igrac.broj_strela.toString(), this.x+sirina_igraca/2, this.y+this.visina_igraca+10);
 
 
 		kanvas.font = "30px Comic Sans MS";
 		kanvas.fillStyle = "rgba(0,255,0,0.5)";
 		kanvas.textAlign = "center";
-		kanvas.fillText(igrac.broj_pogodjenih_balona.toString(), this.x+sirina_igraca/2, 30);
+		kanvas.fillText("Baloni : "+igrac.broj_pogodjenih_balona.toString(), this.x+sirina_igraca/2, 30);
+	}
+
+	this.frenziFunction = function(duzina_frenzija){
+		this.frenzi=1;
+		krugovi.forEach(function(element){
+			element.dy*=2;
+		})
+
+		for(let i=0;i<10;i++)
+			iscrtajBalone(duzina_frenzija);
+
+		timeouts.push(window.setTimeout(function(){
+			krugovi.forEach(function(element){
+			element.dy/=2;
+			})
+			this.frenzi=0;
+		},10000));
+
+	}
+	this.freezFunction = function(){
+		krugovi.forEach(function(element){
+			element.dy/=5;
+		})
+		timeouts.push(window.setTimeout(function(){
+			krugovi.forEach(function(element){
+			element.dy*=5;
+			})
+		},10000));
 	}
 }
 
@@ -275,7 +346,7 @@ function Strela(y,src){
 		kanvas.drawImage(this.image,this.x,this.y,this.duzina_strele,this.sirina_strele);
 	}
 	this.update = function(){
-		this.x+=10;
+		this.x+=15;
 		if(this.x>=window.innerWidth-this.duzina_strele){
 			var obrisi_element = strele.indexOf(this);
 			strele.splice(obrisi_element,1);
