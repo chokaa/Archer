@@ -184,7 +184,6 @@ function animate(){
 			let razdaljina = Math.sqrt(x+y);
 			if(  razdaljina < element_kruga.poluprecnik  ){
 				var obrisi_element = krugovi.indexOf(element_kruga);
-				krugovi.splice(obrisi_element,1);
 				igrac.broj_pogodjenih_balona+=1;
 				if(element_kruga.frenzi){
 					igrac.frenziFunction(10);
@@ -192,6 +191,10 @@ function animate(){
 				if(element_kruga.freez){
 					igrac.freezFunction();
 				}
+				if(element_kruga.bomb){
+					igrac.bombFunction();
+				}
+				krugovi.splice(obrisi_element,1);
 			}
 	})
 	})
@@ -226,9 +229,11 @@ window.addEventListener('click',function(event){
 
 
 function Krug(x,y,poluprecnik,dy){
-	this.frenzi = Math.random()*100<3?1:0;
+	this.frenzi = Math.random()*100<2?1:0;
 	if(this.frenzi==0)
-		this.freez = Math.random()*100<3?1:0;
+		this.freez = Math.random()*100<2?1:0;
+	if(this.frenzi==0 && this.freez==0)
+		this.bomb = Math.random()*100<2?1:0;
 
 	this.x=x;
 	this.y=y;
@@ -257,16 +262,22 @@ function Krug(x,y,poluprecnik,dy){
 			kanvas.textAlign = "center";
 			kanvas.fillText("FREEZ", this.x, this.y);
 		}
+		if(this.bomb){
+			kanvas.font = "10px Comic Sans MS";
+			kanvas.fillStyle = "rgb(0,0,0)";
+			kanvas.textAlign = "center";
+			kanvas.fillText("BOMB", this.x, this.y);
+		}
 	}
 	this.update = function(){
 		if(this.y + this.poluprecnik <= 0 ){
 			var ukloni = krugovi.indexOf(this);
 			krugovi.splice(ukloni,1);
 		}
-
-		this.y+=this.dy;
-		this.draw();
-
+		else{
+			this.y+=this.dy;
+			this.draw();
+		}
 	}
 }
 function Igrac(y,src){
@@ -331,6 +342,19 @@ function Igrac(y,src){
 			})
 		},10000));
 	}
+	this.bombFunction = function(){
+		krugovi.forEach(function(element){
+			if(element.y<window.innerHeight){
+				igrac.broj_pogodjenih_balona+=1;
+				if(element.freez)
+					igrac.freezFunction();
+				else if(element.frenzi)
+					igrac.frenziFunction(10);
+				let ukloni = krugovi.indexOf(element);
+				krugovi.splice(ukloni,1);
+			}
+		})
+	}
 }
 
 function Strela(y,src){
@@ -353,6 +377,7 @@ function Strela(y,src){
 			var obrisi_element = strele.indexOf(this);
 			strele.splice(obrisi_element,1);
 		}
-		this.draw();
+		else
+			this.draw();
 	}
 }
