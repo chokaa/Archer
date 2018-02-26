@@ -16,10 +16,10 @@ var visina_igraca = 200;
 var sirina_igraca = 200;
 var pozicija_igraca = 200;
 var broj_strela = 20;
-var sirina_strele = 30;
-var duzina_strele = 150;
+var sirina_strele = 40;
+var duzina_strele = 160;
 var igrac;
-var broj_iniciranih_balona;
+var broj_iniciranih_balona=50;
 var score;
 
 var iscrtajBalone = function(broj_balona){
@@ -43,7 +43,7 @@ var inicirajBalone = function(broj_balona){
 
 	krugovi.length=0;
 	for(let i=0;i<5;i++)
-		iscrtajBalone(20);
+		iscrtajBalone(broj_balona);
 
 }
 
@@ -179,8 +179,10 @@ function animate(){
 
 	krugovi.forEach(function(element_kruga){
 		strele.forEach(function(element_strele){
-			if(((element_kruga.x-element_kruga.poluprecnik)<(element_strele.x+element_strele.duzina_strele)) && ((element_strele.x+element_strele.duzina_strele)<(element_kruga.x+element_kruga.poluprecnik))
-				&& ( (element_kruga.y-element_kruga.poluprecnik) < (element_strele.y+element_strele.sirina_strele)  &&  (element_kruga.y+element_kruga.poluprecnik) > (element_strele.y) )){
+			let x = (element_strele.x+element_strele.duzina_strele-element_kruga.x)*(element_strele.x+element_strele.duzina_strele-element_kruga.x);
+			let y = (element_strele.y-element_kruga.y+element_kruga.poluprecnik)*(element_strele.y-element_kruga.y+element_kruga.poluprecnik);
+			let razdaljina = Math.sqrt(x+y);
+			if(  razdaljina < element_kruga.poluprecnik  ){
 				var obrisi_element = krugovi.indexOf(element_kruga);
 				krugovi.splice(obrisi_element,1);
 				igrac.broj_pogodjenih_balona+=1;
@@ -224,9 +226,9 @@ window.addEventListener('click',function(event){
 
 
 function Krug(x,y,poluprecnik,dy){
-	this.frenzi = Math.random()*100<2?1:0;
+	this.frenzi = Math.random()*100<3?1:0;
 	if(this.frenzi==0)
-		this.freez = Math.random()*100<2?1:0;
+		this.freez = Math.random()*100<3?1:0;
 
 	this.x=x;
 	this.y=y;
